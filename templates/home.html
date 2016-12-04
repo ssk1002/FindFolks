@@ -18,18 +18,17 @@
             <div class="row">
                 <div class="col-lg-12">
                     <h1>Home</h1>
-                    <form action="/post" method="POST">
-                        <h2>Welcome {{ username }}!</h2>
-                        <input type="text" name="blog" placeholder="Post" required/> </br>
-                        <input type="submit" value="Post"/>
-                    </form> </br>
-
+                    <h2>Welcome {{ username }}!</h2>
+                    {% if error %}
+                        <p class="error"><strong>Error:</strong> {{ error }}</p>
+                    {% endif %}
+                    
+                    <h4>Below are all of the upcoming events in the next three days!</h4> </br>
                     <style type="text/css">
                         table, th, td {
                             border: 1px solid black;
                         }
                     </style>
-
                     <table>
                         <th>Time</th>
                         <th>Post</th>

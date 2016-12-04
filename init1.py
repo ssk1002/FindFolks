@@ -116,40 +116,12 @@ def home():
 #	cursor.execute(query, username)
 #	data = cursor.fetchall()
 #	cursor.close()
-	return render_template('home.html', username=username, logged_in=logged_in)
+	return render_template('home.html', username = username)
 
-
-@app.route('/tweets', methods=['GET', 'POST'])
-def tweets():
-	logged_in = False
-	if session.get('logged_in') is True:
-		logged_in = True
-	cursor = conn.cursor()
-	query = 'SELECT username FROM user'
-	cursor.execute(query)
-	all_users = cursor.fetchall()
-	cursor.close()
-	if request.method == 'POST':
-		select_user = request.form.getlist('select_user')[0]
-		cursor = conn.cursor()
-		query = 'SELECT ts, blog_post FROM blog WHERE username = %s ORDER BY ts DESC'
-		cursor.execute(query, select_user)
-		user_tweets = cursor.fetchall()
-		cursor.close()
-		return render_template('tweets.html', posts=user_tweets, all_users=all_users, logged_in=logged_in)
-	return render_template('tweets.html', all_users = all_users, logged_in=logged_in)
-
-		
-@app.route('/post', methods=['GET', 'POST'])
-def post():
-	username = session['username']
-	cursor = conn.cursor()
-	blog = request.form['blog']
-	query = 'INSERT INTO blog (blog_post, username) VALUES(%s, %s)'
-	cursor.execute(query, (blog, username))
-	conn.commit()
-	cursor.close()
-	return redirect(url_for('home'))
+@app.route('/view_my_events')
+def view_my_events():
+#	To do
+	pass
 
 @app.route('/remove_account')
 def removeacct():
