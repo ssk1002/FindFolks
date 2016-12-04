@@ -26,15 +26,13 @@ def hello():
 #Define route for index
 @app.route('/index')
 def index():
-#	now = datetime.datetime.now()
-#	cursor = conn.cursor()
-#	query = "SELECT * FROM an_event WHERE start_time >= %s-%s-%s AND end_time <= %s-%s-%s"
-#	cursor.execute(query, (str(now.month), str(now.day), str(now.year), str(now.month), str(now.day + 3), str(now.year)))
-#	data = cursor.fetchall()
+	now = datetime.datetime.now()
+	cursor = conn.cursor()
+	query = "SELECT * FROM an_event WHERE start_time >= %s-%s-%s AND end_time <= %s-%s-%s"
+	cursor.execute(query, (str(now.month), str(now.day), str(now.year), str(now.month), str(now.day + 3), str(now.year)))
+	data = cursor.fetchall()
 	cursor.close()
 	return render_template('index.html')
-	
-	
 
 #Define route for login
 @app.route('/login')
