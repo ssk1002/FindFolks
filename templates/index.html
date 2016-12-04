@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link href="static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="static/css/simple-sidebar.css" rel="stylesheet">
+</head>
+
+<body>
+<div id="wrapper">
+
+    {% include '_sidebar.html' %}
+
+    <!-- Make sure to keep all page content within the #page-content-wrapper div. -->
+    <!-- Page Content -->
+    <div id="page-content-wrapper">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-12">
+                    {% if success %}
+                    <p class="error"><strong>Success:</strong> {{ success }}</p>
+                    {% endif %}
+                    <h1>Welcome to FindFolks!</h1>
+                    <p>FindFolks is a place where you can find other people just like you, join groups with similar interests, and even RSVP for events.
+                    </br></p> </br>
+                    <h4>Below are a few upcoming events in the next three days!</h4> </br>
+                    {% for event in events %}
+                        <p>{{ event }}</p>
+                        <hr>
+                    {% endfor %}
+                    {% if not logged_in %}
+                        </br>Create an account today to start and Find Folks!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /#page-content-wrapper -->
+
+</div>
+
+<script src="static/js/jquery.js"></script>
+<script src="static/js/bootstrap.min.js"></script>
+</body>
+
+</html>
