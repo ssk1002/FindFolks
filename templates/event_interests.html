@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<link href="static/css/bootstrap.min.css" rel="stylesheet">
+	<link href="static/css/simple-sidebar.css" rel="stylesheet">
+</head>
+
+<body>
+<div id="wrapper">
+
+	{% include '_sidebar.html' %}
+
+	<!-- Make sure to keep all page content within the #page-content-wrapper div. -->
+	<!-- Page Content -->
+	<div id="page-content-wrapper">
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col-lg-12">
+					<h1>Event Interest Search</h1>
+						<h2>Below are events and groups which you have shared interests with</h2>
+						</br>
+							<table>
+								<th>Event ID</th>
+								<th>Event Info</th>
+								<th>Group</th>
+								<th>Shared Interest
+
+								{% for line in posts %}
+									<tr>
+										<td>{{ line.event_id }}</td>
+										<td>{{ line.info }}</td>
+										<td>{{ line.group }}</td>
+										<td>{{ line.interests }}</td>
+									</tr>
+								{% endfor %}
+							</table>
+							{% if error %}
+								<p class="error"><strong>Error:</strong> {{ error }}</p>
+							{% endif %}
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- /#page-content-wrapper -->
+
+</div>
+
+<script src="static/js/jquery.js"></script>
+<script src="static/js/bootstrap.min.js"></script>
+</body>
+
+</html>

@@ -127,7 +127,64 @@ def view_my_events():
 	cursor.execute(query, (username, str(now.month), str(now.day), str(now.year), str(now.month), str(now.day + 3), str(now.year)))
 	data = cursor.fetchall()
 	cursor.close()
-	return render_template('view_my_events.html', username = username, events = data, logged_in = True)
+	return render_template('view_my_events.html', username = username, events = data, logged_in = session['logged_in'])
+
+@app.route('/event_signup')
+def event_signup():
+	return render_template('event_signup.html', logged_in = session['logged_in'])
+	
+@app.route('/eventEnroll', methods=['GET', 'POST'])
+def eventEnroll():
+	event_id = request.form['event_id']
+	cursor = conn.cursor()
+	query = 'SELECT * FROM an_event WHERE event_id = %s'
+	cursor.execute(query, event_id)
+	data = cursor.fetchone()
+	cursor.close()
+	if data:
+		cursor2 = conn.cursor()
+		query = 'SELECT * FROM sign_up WHERE event_id = %s AND username = %s'
+		cursor2.execute(query, (event_id, session['username']))
+		result = cursor.fetchone()
+		cursor2.close()
+		if result:
+			cursor3 = conn.cursor()
+			insert = "INSERT INTO sign_up VALUES (%s, %s, NULL)"
+			cursor3.execute(insert, (event_id, session['username']))
+#			data = cursor2.fetchone()
+			cursor3.close()
+			successmessage = "Registered for Event ID: " + event_id
+			return render_template('home.html', username = session['username'], logged_in = session['logged_in'], success = successmessage)
+		else:
+			successmessage = "Already registered for Event ID: " + event_id
+			return render_template('home.html', username = session['username'], logged_in = session['logged_in'], success = successmessage)
+	else:
+		#returns an error message to the html page
+		error = 'Invalid event ID'
+		return render_template('event_signup.html', logged_in = session['logged_in'], error=error)
+		
+@app.route('/event_interests')
+def eventSimilarInterests():
+#	cursor = conn.cursor()
+#	query = 'SELECT * FROM interest NATURAL JOIN interested_in NATURAL JOIN  WHERE event_id = %s'
+#	cursor.execute(query, event_id)
+#	data = cursor.fetchall()
+#	cursor.close()
+	if data:
+		return render_template('event_signup.html', logged_in = session['logged_in'], events=data)
+	else:
+		error = "You have no interests in common with any groups! Try adding other interests or create your own group with events."
+		return render_template('event_signup.html', logged_in = session['logged_in'], error=error)
+		
+@app.route('/create_event')
+def createEvent():
+	#Todo
+	pass
+
+@app.route('/makeEvent')
+def makeEvent():
+	#Todo
+	pass
 
 @app.route('/remove_account')
 def removeacct():

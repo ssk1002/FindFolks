@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<link href="static/css/bootstrap.min.css" rel="stylesheet">
+	<link href="static/css/simple-sidebar.css" rel="stylesheet">
+</head>
+
+<body>
+<div id="wrapper">
+
+	{% include '_sidebar.html' %}
+
+	<!-- Make sure to keep all page content within the #page-content-wrapper div. -->
+	<!-- Page Content -->
+	<div id="page-content-wrapper">
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col-lg-12">
+					<h1>Event Sign Up</h1>
+						<h2>Enter the Event ID that you would like to sign up for</h2>
+						</br>
+							<form action="/eventEnroll" method="POST">
+								<input type="text" name="event_id" placeholder="Event ID" required/> </br>
+								<input type="submit" value="Sign up!"/>
+								{% if error %}
+									<p class="error"><strong>Error:</strong> {{ error }}</p>
+								{% endif %}
+							</form>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- /#page-content-wrapper -->
+
+</div>
+
+<script src="static/js/jquery.js"></script>
+<script src="static/js/bootstrap.min.js"></script>
+</body>
+
+</html>
