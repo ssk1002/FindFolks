@@ -120,12 +120,14 @@ def home():
 
 @app.route('/view_my_events')
 def view_my_events():
+	now = datetime.datetime.now()
+	cursor = conn.cursor()
 	username = session['username']
 	query = 'SELECT * FROM an_event NATURAL JOIN sign_up WHERE username = %s AND start_time >= %s-%s-%s AND end_time <= %s-%s-%s'
 	cursor.execute(query, (username, str(now.month), str(now.day), str(now.year), str(now.month), str(now.day + 3), str(now.year)))
 	data = cursor.fetchall()
 	cursor.close()
-	return render_template('view_my_events.html', username = username, data = events)
+	return render_template('view_my_events.html', username = username, events = data, logged_in = True)
 
 @app.route('/remove_account')
 def removeacct():
