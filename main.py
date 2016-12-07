@@ -178,13 +178,33 @@ def eventSimilarInterests():
 		
 @app.route('/create_event')
 def createEvent():
-	#Todo
-	pass
+	return render_template('create_event.html', logged_in = session['logged_in'])
 
-@app.route('/makeEvent')
+@app.route('/makeEvent', methods=['GET', 'POST'])
 def makeEvent():
-	#Todo
-	pass
+	username = session['username']
+	group_id = request.form['group_id']
+	title = request.form['title']
+	start_time = request.form['start_time']
+	end_time = request.form['end_time']
+	location_name = request.form['location_name']
+	zipcode = request.form['zipcode']
+	cursor = conn.cursor()
+	query = 'SELECT authorized FROM belongs_to WHERE username = %s AND group_id = %s'
+	cursor.execute(query, (username, group_id))
+	data = cursor.fetchone()
+	cursor.close()
+	#if in group
+	if data:
+		#if authorized
+		if data == 1:
+			pass
+		#not auth
+		else:
+	#not in group LOL
+	else
+	
+	
 
 @app.route('/remove_account')
 def removeacct():
