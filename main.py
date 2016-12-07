@@ -8,13 +8,22 @@ import datetime
 app = Flask(__name__)
 
 # Configure MySQL
-conn = pymysql.connect(unix_socket='/Applications/MAMP/tmp/mysql/mysql.sock',
+# conn = pymysql.connect(unix_socket='/Applications/MAMP/tmp/mysql/mysql.sock',
+# 					   host='localhost',
+#                        user='root',
+#                        password='root',
+#                        db='findfolks',
+#                        charset='utf8mb4',
+#                        cursorclass=pymysql.cursors.DictCursor)
+conn = pymysql.connect(
 					   host='localhost',
-                       user='root',
-                       password='root',
-                       db='findfolks',
-                       charset='utf8mb4',
-                       cursorclass=pymysql.cursors.DictCursor)
+                      user='root',
+                      password='',
+                      db='meetup3',
+                      charset='utf8mb4',
+                      cursorclass=pymysql.cursors.dictcursor
+                      )
+
 
 #Define a route to hello function
 @app.route('/')
