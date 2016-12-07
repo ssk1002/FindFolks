@@ -185,6 +185,7 @@ def makeEvent():
 	username = session['username']
 	group_id = request.form['group_id']
 	title = request.form['title']
+	description = request.form['description']
 	start_time = request.form['start_time']
 	end_time = request.form['end_time']
 	location_name = request.form['location_name']
@@ -193,18 +194,46 @@ def makeEvent():
 	query = 'SELECT authorized FROM belongs_to WHERE username = %s AND group_id = %s'
 	cursor.execute(query, (username, group_id))
 	data = cursor.fetchone()
-	cursor.close()
 	#if in group
 	if data:
 		#if authorized
 		if data == 1:
-			pass
+			cursor = conn.cursor()
+			query1 = 'INSERT INTO an_event VALUES (NULL, %s, %s, %s, %s, %s, %s)'
+			cursor.execute(query1, (title, description, start_time, end_time, location_name, zipcode))
+			query2 = 'SELECT max(event_id) FROM an_event'
+			cursor.execute(query2)
+			event_id = cursor.fetchone()
+			query3 = 'INSERT INTO organize VALUES (%s, %s)'
+			cursor.execute(query3, (event_id, group_id))
+			cursor.close()
+			success = 'Congrats! Event created, your Event ID is ' + event_id
+			return render_template('create_event.html', logged_in = session['logged_in'], success = success)
 		#not auth
 		else:
+			cursor.close()
+			error = 'You are not authorized to create events, ask for authorization.'
+			return render_template('create_event.html', logged_in = session['logged_in'], error = error)
 	#not in group LOL
-	else
+	else:
+		cursor.close()
+		error = 'You are not not in this group. Join the group and ask for authorization to create events.'
+		return render_template('create_event.html', logged_in = session['logged_in'], error = error)
 	
+@app.route('/event_rating')
+def rateEvent():
+	return render_template('event_rating.html', logged_in = session['logged_in'])
 	
+@app.route('/rate')
+def rate():
+	username = session['username']
+	group_id = request.form['event_id']
+	title = request.form['rating']
+	cursor = conn.cursor()
+	query = 'SELECT authorized FROM belongs_to WHERE username = %s AND group_id = %s'
+	cursor.execute(query, (username, group_id))
+	data = cursor.fetchone()
+	cursor.close()
 
 @app.route('/remove_account')
 def removeacct():

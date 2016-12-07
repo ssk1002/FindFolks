@@ -25,15 +25,16 @@
 					<form action="/makeEvent" method="POST">
 						<input type="number" name="group_id" placeholder="Group ID" required/> </br>
 						<input type="text" name="title" placeholder="Title" required/> </br>
+						<input type="text" name="description" placeholder="Description" required/> </br>
 						<input type="datetime-local" name="start_time" placeholder="Start Time" required/> </br>
 						<input type="datetime-local" name="end_time" placeholder="End Time" required/> </br>
 						<input type="text" name="location_name" placeholder="Location Name" required/> </br>
 						<input type="number" name="zipcode" placeholder="Zipcode" required/> </br>
 						<input type="submit" value="Create"/>
-						{% if error %}
-							<p class="error"><strong>Error:</strong> {{ error }}</p>
-						{% endif %}
 					</form>
+					{% if error %}
+						<p class="error"><strong>Error:</strong> {{ error }}</p>
+					{% endif %}
 				</div>
 			</div>
 		</div>
