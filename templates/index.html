@@ -24,10 +24,21 @@
                     <p>FindFolks is a place where you can find other people just like you, join groups with similar interests, and even RSVP for events.
                     </br></p> </br>
                     <h4>Below are all of the upcoming events in the next three days!</h4> </br>
+                    <style type="text/css">
+                        table, th, td {
+                            border: 1px solid black;
+                        }
+                    </style>
+                    <table>
+                    <th>Event ID</th>
+                    <th>Title</th>
                     {% for event in events %}
-                        <p>{{ event }}</p>
-                        <hr>
+                        <tr>
+                            <td>{{ event.event_id }}</td>
+                            <td>{{ event.title }}</td>
+                        </tr>
                     {% endfor %}
+                    </table>
                     {% if not logged_in %}
                         </br>Create an account today to start and Find Folks!</p>
                     {% endif %}

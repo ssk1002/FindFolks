@@ -8,21 +8,22 @@ import datetime
 app = Flask(__name__)
 
 # Configure MySQL
-# conn = pymysql.connect(unix_socket='/Applications/MAMP/tmp/mysql/mysql.sock',
-# 					   host='localhost',
-#                        user='root',
-#                        password='root',
-#                        db='findfolks',
-#                        charset='utf8mb4',
-#                        cursorclass=pymysql.cursors.DictCursor)
-conn = pymysql.connect(
-					   host='localhost',
-                      user='root',
-                      password='',
-                      db='meetup3',
-                      charset='utf8mb4',
-                      cursorclass=pymysql.cursors.dictcursor
-                      )
+conn = pymysql.connect( unix_socket='/Applications/MAMP/tmp/mysql/mysql.sock',
+ 					    host='localhost',
+                        user='root',
+                        password='root',
+                        db='findfolks',
+                        charset='utf8mb4',
+                        cursorclass=pymysql.cursors.DictCursor)
+
+#conn = pymysql.connect(
+#					   host='localhost',
+#                      user='root',
+#                      password='',
+#                      db='findfolks',
+#                      charset='utf8mb4',
+#                      cursorclass=pymysql.cursors.Dictcursor
+#                      )
 
 
 #Define a route to hello function
@@ -37,11 +38,13 @@ def hello():
 def index():
 	now = datetime.datetime.now()
 	cursor = conn.cursor()
-	query = "SELECT * FROM an_event WHERE start_time >= %s-%s-%s AND end_time <= %s-%s-%s"
-	cursor.execute(query, (str(now.month), str(now.day), str(now.year), str(now.month), str(now.day + 3), str(now.year)))
+	starttime = "%s-%s-%s %s:%s:%s" % (str(now.year), str(now.month), str(now.day), str(now.hour), str(now.minute), str(now.second))
+	endtime =  "%s-%s-%s %s:%s:%s" % (str(now.year), str(now.month), str(now.day+3), str(now.hour), str(now.minute), str(now.second))
+	query = 'SELECT * FROM an_event WHERE start_time BETWEEN \'' + starttime + '\' AND \'' + endtime + "\'"
+	cursor.execute(query)
 	data = cursor.fetchall()
 	cursor.close()
-	return render_template('index.html')
+	return render_template('index.html', events=data)
 
 #Define route for login
 @app.route('/login')
@@ -60,7 +63,7 @@ def register():
 def loginAuth():
 	#grabs information from the forms
 	username = request.form['username']
-	password = request.form['password']
+	password = request.form['password'].encode('utf-8')
 	md5password = hashlib.md5(password).hexdigest()
 	#cursor used to send queries
 	cursor = conn.cursor()
@@ -88,7 +91,7 @@ def loginAuth():
 def registerAuth():
 	#grabs information from the forms
 	username = request.form['username']
-	password = request.form['password']
+	password = request.form['password'].encode('utf-8')
 	firstname = request.form['firstname']
 	lastname = request.form['lastname']
 	email = request.form['email']
@@ -233,16 +236,37 @@ def makeEvent():
 def rateEvent():
 	return render_template('event_rating.html', logged_in = session['logged_in'])
 	
-@app.route('/rate')
+@app.route('/rate', methods=['GET', 'POST'])
 def rate():
 	username = session['username']
-	group_id = request.form['event_id']
-	title = request.form['rating']
+	event_id = request.form['event_id']
+	rating = request.form['rating']
 	cursor = conn.cursor()
-	query = 'SELECT authorized FROM belongs_to WHERE username = %s AND group_id = %s'
-	cursor.execute(query, (username, group_id))
+	query = 'SELECT * FROM sign_up WHERE username = %s AND event_id = %s'
+	cursor.execute(query, (username, event_id))
 	data = cursor.fetchone()
-	cursor.close()
+	#if signed up
+	if data:
+		#check if event has already passed
+		now = datetime.datetime.now()
+		query2 = "SELECT * FROM an_event WHERE event_id = %s AND end_time < \'%s-%s-%s %s:%s:%s\'"
+		cursor.execute(query2, (event_id, (now.year), (now.month), (now.day) (now.hour), (now.minute), (now.second)))
+		elapsed = cursor.fetchone()
+		#if passed
+		if elapsed:
+			query3 = 'UPDATE table_name SET rating = %s WHERE username = %s AND event_id = %s'
+			cursor.execute(query3, (rating, username, event_id))
+			cursor.close()
+			success = "Your event " + event_id + " has been rated as " + rating
+			return render_template('event_rating.html', logged_in = session['logged_in'], success = success)
+		#not passed
+		else:
+			error = "Your event has not ended yet!"
+			return render_template('event_rating.html', logged_in = session['logged_in'], error = error)
+	else:
+		error = "You are not signed up for this event!"
+		return render_template('event_rating.html', logged_in = session['logged_in'], error = error)
+
 
 @app.route('/remove_account')
 def removeacct():
