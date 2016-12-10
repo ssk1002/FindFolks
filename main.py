@@ -123,20 +123,26 @@ def registerAuth():
 def home():
 	username = session['username']
 	logged_in = session['logged_in']
-#	cursor = conn.cursor()
-#	query = 'SELECT ts, blog_post FROM blog WHERE username = %s ORDER BY ts DESC'
-#	cursor.execute(query, username)
-#	data = cursor.fetchall()
-#	cursor.close()
-	return render_template('home.html', username = username, logged_in = logged_in)
+	now = datetime.datetime.now()
+	cursor = conn.cursor()
+	starttime = "%s-%s-%s %s:%s:%s" % (str(now.year), str(now.month), str(now.day), str(now.hour), str(now.minute), str(now.second))
+	endtime =  "%s-%s-%s %s:%s:%s" % (str(now.year), str(now.month), str(now.day+3), str(now.hour), str(now.minute), str(now.second))
+	query = 'SELECT * FROM an_event WHERE start_time BETWEEN \'' + starttime + '\' AND \'' + endtime + "\'"
+	cursor.execute(query)
+	data = cursor.fetchall()
+	cursor.close()
+	return render_template('home.html', username = username, logged_in = logged_in, events = data)
 
 @app.route('/view_my_events')
 def view_my_events():
+	username = session['username']
 	now = datetime.datetime.now()
 	cursor = conn.cursor()
-	username = session['username']
-	query = 'SELECT * FROM an_event NATURAL JOIN sign_up WHERE username = %s AND start_time >= %s-%s-%s AND end_time <= %s-%s-%s'
-	cursor.execute(query, (username, str(now.month), str(now.day), str(now.year), str(now.month), str(now.day + 3), str(now.year)))
+	starttime = "%s-%s-%s %s:%s:%s" % (str(now.year), str(now.month), str(now.day), str(now.hour), str(now.minute), str(now.second))
+	endtime =  "%s-%s-%s %s:%s:%s" % (str(now.year), str(now.month), str(now.day+3), str(now.hour), str(now.minute), str(now.second))
+#	query = 'SELECT * FROM an_event WHERE start_time BETWEEN \'' + starttime + '\' AND \'' + endtime + "\'"
+	query = 'SELECT * FROM an_event NATURAL JOIN sign_up WHERE username = %s AND start_time BETWEEN \'' + starttime + '\' AND \'' + endtime + "\'"
+	cursor.execute(query, (username))
 	data = cursor.fetchall()
 	cursor.close()
 	return render_template('view_my_events.html', username = username, events = data, logged_in = session['logged_in'])
@@ -153,23 +159,29 @@ def eventEnroll():
 	cursor.execute(query, event_id)
 	data = cursor.fetchone()
 	cursor.close()
+	#if it is a valid event
 	if data:
 		cursor2 = conn.cursor()
 		query = 'SELECT * FROM sign_up WHERE event_id = %s AND username = %s'
 		cursor2.execute(query, (event_id, session['username']))
-		result = cursor.fetchone()
+		result = cursor2.fetchone()
+		print result
 		cursor2.close()
-		if result:
+		#if not already registered
+		if result == None:
 			cursor3 = conn.cursor()
 			insert = "INSERT INTO sign_up VALUES (%s, %s, NULL)"
 			cursor3.execute(insert, (event_id, session['username']))
+			conn.commit()
 #			data = cursor2.fetchone()
 			cursor3.close()
 			successmessage = "Registered for Event ID: " + event_id
-			return render_template('home.html', username = session['username'], logged_in = session['logged_in'], success = successmessage)
+			return render_template('event_signup.html', logged_in = session['logged_in'], success = successmessage)
+		#if already registered
 		else:
 			successmessage = "Already registered for Event ID: " + event_id
-			return render_template('home.html', username = session['username'], logged_in = session['logged_in'], success = successmessage)
+			return render_template('event_signup.html', logged_in = session['logged_in'], success = successmessage)
+	#non valid event
 	else:
 		#returns an error message to the html page
 		error = 'Invalid event ID'
@@ -213,10 +225,12 @@ def makeEvent():
 			cursor = conn.cursor()
 			query1 = 'INSERT INTO an_event VALUES (NULL, %s, %s, %s, %s, %s, %s)'
 			cursor.execute(query1, (title, description, start_time, end_time, location_name, zipcode))
+			conn.commit()
 			query2 = 'SELECT max(event_id) FROM an_event'
 			cursor.execute(query2)
 			event_id = cursor.fetchone()
 			query3 = 'INSERT INTO organize VALUES (%s, %s)'
+			conn.commit()
 			cursor.execute(query3, (event_id, group_id))
 			cursor.close()
 			success = 'Congrats! Event created, your Event ID is ' + event_id
@@ -249,13 +263,15 @@ def rate():
 	if data:
 		#check if event has already passed
 		now = datetime.datetime.now()
-		query2 = "SELECT * FROM an_event WHERE event_id = %s AND end_time < \'%s-%s-%s %s:%s:%s\'"
-		cursor.execute(query2, (event_id, (now.year), (now.month), (now.day) (now.hour), (now.minute), (now.second)))
+		endtime = "%s-%s-%s %s:%s:%s" % (str(now.year), str(now.month), str(now.day), str(now.hour), str(now.minute), str(now.second))
+		query2 = "SELECT * FROM an_event WHERE event_id = %s AND end_time < %s"
+		cursor.execute(query2, (event_id, endtime))
 		elapsed = cursor.fetchone()
 		#if passed
 		if elapsed:
 			query3 = 'UPDATE table_name SET rating = %s WHERE username = %s AND event_id = %s'
 			cursor.execute(query3, (rating, username, event_id))
+			conn.commit()
 			cursor.close()
 			success = "Your event " + event_id + " has been rated as " + rating
 			return render_template('event_rating.html', logged_in = session['logged_in'], success = success)

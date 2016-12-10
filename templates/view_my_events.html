@@ -19,10 +19,31 @@
 				<div class="col-lg-12">
 					<h1>{{ username }} below are your upcoming events!</h1>
 					</br>
+					<style type="text/css">
+						table, th, td {
+							border: 1px solid black;
+						}
+					</style>
+					<table>
+					<th>Event ID</th>
+					<th>Title</th>
+					<th>Description</th>
+					<th>Start Time</th>
+					<th>End Time</th>
+					<th>Location Name</th>
+					<th>Zipcode</th>
 					{% for event in events %}
-						<p>{{ event }}</p>
-						<hr>
+						<tr>
+							<td>{{ event.event_id }}</td>
+							<td>{{ event.title }}</td>
+							<td>{{ event.description }}</td>
+							<td>{{ event.start_time }}</td>
+							<td>{{ event.end_time }}</td>
+							<td>{{ event.location_name }}</td>
+							<td>{{ event.zipcode }}</td>
+						</tr>
 					{% endfor %}
+					</table>
 				</div>
 			</div>
 		</div>

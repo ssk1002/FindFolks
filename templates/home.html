@@ -33,15 +33,24 @@
                         }
                     </style>
                     <table>
-                        <th>Event</th>
-                        <th>Info?</th>
-
-                        {% for line in posts %}
-                            <tr>
-                                <td>{{ line.ts }}</td>
-                                <td>{{ line.blog_post }}</td>
-                            </tr>
-                        {% endfor %}
+                    <th>Event ID</th>
+                    <th>Title</th>
+                    <th>Description</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Location Name</th>
+                    <th>Zipcode</th>
+                    {% for event in events %}
+                        <tr>
+                            <td>{{ event.event_id }}</td>
+                            <td>{{ event.title }}</td>
+                            <td>{{ event.description }}</td>
+                            <td>{{ event.start_time }}</td>
+                            <td>{{ event.end_time }}</td>
+                            <td>{{ event.location_name }}</td>
+                            <td>{{ event.zipcode }}</td>
+                        </tr>
+                    {% endfor %}
                     </table>
                 </div>
             </div>

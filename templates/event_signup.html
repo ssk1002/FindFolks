@@ -17,6 +17,9 @@
 		<div class="container-fluid">
 			<div class="row">
 				<div class="col-lg-12">
+				{% if success %}
+				<p class="error"><strong>Success:</strong> {{ success }}</p>
+				{% endif %}
 					<h1>Event Sign Up</h1>
 						<h2>Enter the Event ID that you would like to sign up for</h2>
 						</br>
