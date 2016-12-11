@@ -230,8 +230,8 @@ def makeEvent():
 			cursor.execute(query2)
 			event_id = cursor.fetchone()
 			query3 = 'INSERT INTO organize VALUES (%s, %s)'
-			conn.commit()
 			cursor.execute(query3, (event_id, group_id))
+			conn.commit()
 			cursor.close()
 			success = 'Congrats! Event created, your Event ID is ' + event_id
 			return render_template('create_event.html', logged_in = session['logged_in'], success = success)
@@ -282,6 +282,86 @@ def rate():
 	else:
 		error = "You are not signed up for this event!"
 		return render_template('event_rating.html', logged_in = session['logged_in'], error = error)
+
+@app.route('/friends')
+def friends():
+	username = session['username']
+	cursor = conn.cursor()
+	query = 'SELECT * FROM friend WHERE friend_of = %s'
+	cursor.execute(query, (username))
+	data = cursor.fetchall()
+	cursor.close()
+	return render_template('friends.html', logged_in = session['logged_in'], friends = data)
+	
+@app.route('/friending', methods=['GET', 'POST'])
+def addRemoveFriends():
+	username = session['username']
+	friendUsername = request.form['username']
+	addOrRemove = request.form['addOrRemove']
+	#check if friends username exists
+	cursor = conn.cursor()
+	query = 'SELECT * FROM member WHERE username = %s'
+	cursor.execute(query, friendUsername)
+	data = cursor.fetchone()
+	#if exists
+	if data:
+		#add friend
+		if addOrRemove == 'friend':
+			#check if already a friend
+			query = 'SELECT * FROM friend WHERE friend_of = %s AND friend_to = %s'
+			cursor.execute(query, (username, friendUsername))
+			data = cursor.fetchone()
+			#already friend
+			if data:
+				query = 'SELECT * FROM friend WHERE friend_of = %s'
+				cursor.execute(query, (username))
+				data = cursor.fetchall()
+				cursor.close()
+				success = 'That user is already your friend! :)'
+				return render_template('friends.html', logged_in = session['logged_in'], friends = data, success = success)
+			#add friend!
+			else:
+				query = 'INSERT INTO friend VALUES (%s, %s)'
+				cursor.execute(query, (username, friendUsername))
+				conn.commit()
+				query = 'SELECT * FROM friend WHERE friend_of = %s'
+				cursor.execute(query, (username))
+				data = cursor.fetchall()
+				cursor.close()
+				success = 'Friend added! :)'
+				return render_template('friends.html', logged_in = session['logged_in'], friends = data, success = success)
+		#remove friend
+		else:
+			#check if already a friend
+			query = 'SELECT * FROM friend WHERE friend_of = %s AND friend_to = %s'
+			cursor.execute(query, (username, friendUsername))
+			data = cursor.fetchone()
+			#already friend
+			if not data:
+				query = 'SELECT * FROM friend WHERE friend_of = %s'
+				cursor.execute(query, (username))
+				data = cursor.fetchall()
+				cursor.close()
+				success = 'That user is already not your friend! :('
+				return render_template('friends.html', logged_in = session['logged_in'], friends = data, success = success)
+			#add friend!
+			else:
+				query = 'DELETE FROM friend WHERE friend_of = %s AND friend_to = %s'
+				cursor.execute(query, (username, friendUsername))
+				conn.commit()
+				query = 'SELECT * FROM friend WHERE friend_of = %s'
+				cursor.execute(query, (username))
+				data = cursor.fetchall()
+				cursor.close()
+				success = 'Friend removed! :('
+				return render_template('friends.html', logged_in = session['logged_in'], friends = data, success = success)
+	#if not exists
+	else:
+		cursor.close()
+		error = 'That username doesnt exist.'
+		return render_template('friends.html', error = error)
+	
+	
 
 
 @app.route('/remove_account')
