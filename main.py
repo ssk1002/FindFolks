@@ -199,6 +199,28 @@ def eventSimilarInterests():
 	else:
 		error = "You have no interests in common with any groups! Try adding other interests or create your own group with events."
 		return render_template('event_signup.html', logged_in = session['logged_in'], error=error)
+
+@app.route('/create_group')
+def createGroup():
+	return render_template('create_group.html', logged_in = session['logged_in'])
+
+@app.route('/makeGroup', methods=['GET', 'POST'])
+def makeGroup():
+	username = session['username']
+	group_name = request.form['group_name']
+	description = request.form['description']
+	cursor = conn.cursor()
+	query = 'INSERT INTO a_group VALUES (NULL, %s, %s, %s)'
+	cursor.execute(query, (group_name, description, username))
+	conn.commit()
+	query2 = 'SELECT max(group_id) FROM a_group'
+	cursor.execute(query2)
+	group_id = cursor.fetchone()
+	query = 'INSERT INTO belongs_to VALUES (%s, %s, 1)'
+	cursor.execute(query, (group_id[max(group_id)], username))
+	conn.commit()
+	success = 'Congrats! Group created, your Group ID is ' + str(group_id[max(group_id)])
+	return render_template('create_group.html', logged_in = session['logged_in'], success = success)
 		
 @app.route('/create_event')
 def createEvent():
@@ -361,21 +383,159 @@ def addRemoveFriends():
 		error = 'That username doesnt exist.'
 		return render_template('friends.html', error = error)
 	
+@app.route('/authorized')
+def authorized():
+	username = session['username']
+	cursor = conn.cursor()
+	query = 'SELECT * FROM a_group NATURAL JOIN belongs_to WHERE authorized = 1'
+	cursor.execute(query)
+	data = cursor.fetchall()
+	cursor.close()
+	return render_template('authorized.html', logged_in = session['logged_in'], authorized = data)
+		
+@app.route('/authorizing', methods=['GET', 'POST'])
+def authorizeUser():
+	username = session['username']
+	group_id = request.form['group_id']
+	otherUsername = request.form['username']
+	addOrRemove = request.form['addOrRemove']
+	cursor = conn.cursor()
+	query = 'SELECT * FROM a_group WHERE group_id = %s AND creator = %s'
+	cursor.execute(query, (group_id, username))
+	creatorFlag = cursor.fetchone()
+	if creatorFlag == None:
+		query = 'SELECT * FROM a_group NATURAL JOIN belongs_to WHERE authorized = 1'
+		cursor.execute(query)
+		data = cursor.fetchall()
+		cursor.close()
+		error = 'you are not the creator'
+		return render_template('authorized.html', logged_in = session['logged_in'], authorized = data, error = error)
+	#check if other username exists
+	query = 'SELECT * FROM member WHERE username = %s'
+	cursor.execute(query, otherUsername)
+	otherUserExist = cursor.fetchone()
+	#check if group exists
+	cursor = conn.cursor()
+	query = 'SELECT * FROM a_group WHERE group_id = %s'
+	cursor.execute(query, group_id)
+	data = cursor.fetchone()
+	#group exists
+	if data:
+		#if other username exists
+		if otherUserExist:
+			#add
+			if addOrRemove == 'authorize':
+				#check if in belongs to/already authorized
+				query = 'SELECT * FROM belongs_to WHERE group_id = %s AND username = %s'
+				cursor.execute(query, (group_id, otherUsername))
+				data = cursor.fetchone()
+				#in belongs to
+				if data:
+					#if already authorized
+					if data['authorized'] == 1:
+						query = 'SELECT * FROM a_group NATURAL JOIN belongs_to WHERE authorized = 1'
+						cursor.execute(query)
+						data = cursor.fetchall()
+						cursor.close()
+						success = 'That user is already your authorized! :)'
+						return render_template('authorized.html', logged_in = session['logged_in'], authorized = data, success = success)
+					#authorize!
+					else:
+						query = 'UPDATE belongs_to SET authorized = 1 WHERE group_id = %s AND username = %s'
+						cursor.execute(query, (group_id, otherUsername))
+						conn.commit()
+						query = 'SELECT * FROM a_group NATURAL JOIN belongs_to WHERE authorized = 1'
+						cursor.execute(query)
+						data = cursor.fetchall()
+						cursor.close()
+						success = 'That user is now authorized! :)'
+						return render_template('authorized.html', logged_in = session['logged_in'], authorized = data, success = success)
+				#not in belongs to
+				else:
+					query = 'SELECT * FROM a_group NATURAL JOIN belongs_to WHERE authorized = 1'
+					cursor.execute(query)
+					data = cursor.fetchall()
+					cursor.close()
+					error = 'That user is not even part of the group!'
+					return render_template('authorized.html', logged_in = session['logged_in'], authorized = data, error = error)
+			#remove
+			else:
+				#check if in belongs to/already authorized
+				query = 'SELECT * FROM belongs_to WHERE group_id = %s AND username = %s'
+				cursor.execute(query, (group_id, otherUsername))
+				data = cursor.fetchone()
+				#in belongs to
+				if data:
+					#if already authorized
+					if data['authorized'] != 1:
+						query = 'SELECT * FROM a_group NATURAL JOIN belongs_to WHERE authorized = 1'
+						cursor.execute(query)
+						data = cursor.fetchall()
+						cursor.close()
+						success = 'That user is already not authorized!'
+						return render_template('authorized.html', logged_in = session['logged_in'], authorized = data, success = success)
+					#deauthorize
+					else:
+						#check to see if creator removal himself
+						if creatorFlag != None and otherUsername == username:
+							query = 'SELECT * FROM a_group NATURAL JOIN belongs_to WHERE authorized = 1'
+							cursor.execute(query)
+							data = cursor.fetchall()
+							cursor.close()
+							error = 'you are the creator and cannot deauthorize yourself'
+							return render_template('authorized.html', logged_in = session['logged_in'], authorized = data, error = error)
+						query = 'UPDATE belongs_to SET authorized = 0 WHERE group_id = %s AND username = %s'
+						cursor.execute(query, (group_id, otherUsername))
+						conn.commit()
+						query = 'SELECT * FROM a_group NATURAL JOIN belongs_to WHERE authorized = 1'
+						cursor.execute(query)
+						data = cursor.fetchall()
+						cursor.close()
+						success = 'That user is now deauthorized!'
+						return render_template('authorized.html', logged_in = session['logged_in'], authorized = data, success = success)
+				#not in belongs to
+				else:
+					query = 'SELECT * FROM a_group NATURAL JOIN belongs_to WHERE authorized = 1'
+					cursor.execute(query)
+					data = cursor.fetchall()
+					cursor.close()
+					error = 'That user is not even part of the group!'
+					return render_template('authorized.html', logged_in = session['logged_in'], authorized = data, error = error)	
+		#other user doesnt exist	
+		else:
+			query = 'SELECT * FROM a_group NATURAL JOIN belongs_to WHERE authorized = 1'
+			cursor.execute(query)
+			data = cursor.fetchall()
+			cursor.close()
+			error = 'That user doesnt exist!'
+			return render_template('authorized.html', logged_in = session['logged_in'], authorized = data, error = error)
+	#group doesnt exist
+	else:
+		query = 'SELECT * FROM a_group NATURAL JOIN belongs_to WHERE authorized = 1'
+		cursor.execute(query)
+		data = cursor.fetchall()
+		cursor.close()
+		error = 'That group doesnt exist!'
+		return render_template('authorized.html', logged_in = session['logged_in'], authorized = data, error = error)
 	
-
 
 @app.route('/remove_account')
 def removeacct():
 	username = session['username']
 	cursor = conn.cursor()
 	query = 'DELETE FROM member WHERE username = %s'
-	cursor.execute(query, username)
-	conn.commit()
-	cursor.close()
-	session.pop('username')
-	session.pop('logged_in')
-	success = "Account removal sucessful, we are sad to see you go :("
-	return render_template('index.html', success = success)
+	try:
+		cursor.execute(query, username)
+		conn.commit()
+		cursor.close()
+	except (pymysql.Error, pymysql.Warning) as e:
+		error = "You have too much data in other tables, please clear that to remove account!"
+		return render_template('error.html', logged_in = session['logged_in'], error = error)
+	else:
+		session.pop('username')
+		session.pop('logged_in')
+		success = "Account removal sucessful, we are sad to see you go :("
+		return render_template('index.html', success = success)
 
 @app.route('/logout')
 def logout():
