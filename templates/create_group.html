@@ -23,8 +23,10 @@
 					<h1>Create Group</h1>
 					<h2>Enter the following details in order to create a group.</h2>
 					<form action="/makeGroup" method="POST">
-						<input type="name" name="group_name" placeholder="Group Name" required/> </br>
+						<input type="text" name="group_name" placeholder="Group Name" required/> </br>
 						<input type="text" name="description" placeholder="Description" required/> </br>
+						<input type="text" name="category" placeholder="Category" required/> </br>
+						<input type="text" name="keyword" placeholder="Keyword" required/> </br>
 						<input type="submit" value="Create"/>
 					</form>
 					{% if error %}

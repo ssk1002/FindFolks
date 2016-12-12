@@ -17,7 +17,7 @@
 		<div class="container-fluid">
 			<div class="row">
 				<div class="col-lg-12">
-					<h1>{{ username }} below are your upcoming events in the next 3 days!</h1>
+					<h1>Below are the average ratings of events from the last three days which you are a group member of!</h1>
 					</br>
 					<style type="text/css">
 						table, th, td {
@@ -27,20 +27,12 @@
 					<table>
 					<th>Event ID</th>
 					<th>Title</th>
-					<th>Description</th>
-					<th>Start Time</th>
-					<th>End Time</th>
-					<th>Location Name</th>
-					<th>Zipcode</th>
+					<th>Rating</th>
 					{% for event in events %}
 						<tr>
 							<td>{{ event.event_id }}</td>
 							<td>{{ event.title }}</td>
-							<td>{{ event.description }}</td>
-							<td>{{ event.start_time }}</td>
-							<td>{{ event.end_time }}</td>
-							<td>{{ event.location_name }}</td>
-							<td>{{ event.zipcode }}</td>
+							<td>{{ event.rating }}</td>
 						</tr>
 					{% endfor %}
 					</table>

@@ -17,27 +17,45 @@
 		<div class="container-fluid">
 			<div class="row">
 				<div class="col-lg-12">
-					<h1>Event Interest Search</h1>
-						<h2>Below are events and groups which you have shared interests with</h2>
-						</br>
-							<table>
-								<th>Event ID</th>
-								<th>Event Info</th>
-								<th>Group</th>
-								<th>Shared Interest
-
-								{% for line in posts %}
-									<tr>
-										<td>{{ line.event_id }}</td>
-										<td>{{ line.info }}</td>
-										<td>{{ line.group }}</td>
-										<td>{{ line.interests }}</td>
-									</tr>
-								{% endfor %}
-							</table>
-							{% if error %}
-								<p class="error"><strong>Error:</strong> {{ error }}</p>
-							{% endif %}
+					<h1>Home</h1>
+					{% if success %}
+					<p class="error"><strong>Success:</strong> {{ success }}</p>
+					{% endif %}
+					<h2>Welcome {{ username }}!</h2>
+					{% if error %}
+						<p class="error"><strong>Error:</strong> {{ error }}</p>
+					{% endif %}
+					
+					<h4>Below are all of the events matching your interests</h4> </br>
+					<style type="text/css">
+						table, th, td {
+							border: 1px solid black;
+						}
+					</style>
+					<table>
+					<th>Event ID</th>
+					<th>Title</th>
+					<th>Description</th>
+					<th>Start Time</th>
+					<th>End Time</th>
+					<th>Location Name</th>
+					<th>Zipcode</th>
+					<th>Category</th>
+					<th>Keyword</th>
+					{% for event in events %}
+						<tr>
+							<td>{{ event.event_id }}</td>
+							<td>{{ event.title }}</td>
+							<td>{{ event.description }}</td>
+							<td>{{ event.start_time }}</td>
+							<td>{{ event.end_time }}</td>
+							<td>{{ event.location_name }}</td>
+							<td>{{ event.zipcode }}</td>
+							<td>{{ event.category }}</td>
+							<td>{{ event.keyword }}</td>
+						</tr>
+					{% endfor %}
+					</table>
 				</div>
 			</div>
 		</div>

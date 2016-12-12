@@ -147,6 +147,17 @@ def view_my_events():
 	cursor.close()
 	return render_template('view_my_events.html', username = username, events = data, logged_in = session['logged_in'])
 
+@app.route('/view_all_events')
+def view_all_events():
+		username = session['username']
+		now = datetime.datetime.now()
+		cursor = conn.cursor()
+		query = 'SELECT * FROM an_event'
+		cursor.execute(query)
+		data = cursor.fetchall()
+		cursor.close()
+		return render_template('view_all_events.html', username = username, events = data, logged_in = session['logged_in'])
+
 @app.route('/event_signup')
 def event_signup():
 	return render_template('event_signup.html', logged_in = session['logged_in'])
@@ -189,16 +200,88 @@ def eventEnroll():
 		
 @app.route('/event_interests')
 def eventSimilarInterests():
-#	cursor = conn.cursor()
-#	query = 'SELECT * FROM interest NATURAL JOIN interested_in NATURAL JOIN  WHERE event_id = %s'
-#	cursor.execute(query, event_id)
-#	data = cursor.fetchall()
-#	cursor.close()
+#	SELECT * FROM an_event NATURAL JOIN organize NATURAL JOIN about WHERE (category, keyword) IN (SELECT category, keyword FROM interested_in WHERE username = '2')
+	username = session['username']
+	cursor = conn.cursor()
+	query = 'SELECT * FROM an_event NATURAL JOIN organize NATURAL JOIN about WHERE (category, keyword) IN (SELECT category, keyword FROM interested_in WHERE username = %s)'
+	cursor.execute(query, username)
+	data = cursor.fetchall()
+	cursor.close()
+	return render_template('event_interests.html', logged_in = session['logged_in'], events = data)
+
+@app.route('/friends_events')
+def friendsEvents():
+	#SELECT * FROM sign_up NATURAL JOIN an_event WHERE username IN (SELECT friend_to AS username FROM friend WHERE friend_of = '2')
+	username = session['username']
+	cursor = conn.cursor()
+	query = 'SELECT * FROM sign_up NATURAL JOIN an_event WHERE username IN (SELECT friend_to AS username FROM friend WHERE friend_of = %s)'
+	cursor.execute(query, username)
+	data = cursor.fetchall()
+	cursor.close()
+	return render_template('friends_events.html', logged_in = session['logged_in'], events = data)
+	
+@app.route('/view_join_group')
+def viewJoinGroup():
+	username = session['username']
+	cursor = conn.cursor()
+	query = 'SELECT * FROM a_group'
+	cursor.execute(query)
+	data = cursor.fetchall()
+	query = 'SELECT * FROM a_group NATURAL JOIN belongs_to WHERE username = %s'
+	cursor.execute(query, username)
+	data1 = cursor.fetchall()
+	cursor.close()
+	return render_template('view_join_group.html', logged_in = session['logged_in'], groups = data, mygroups = data1)
+
+@app.route('/joinGroup', methods=['GET', 'POST'])
+def joinGroup():
+	username = session['username']
+	group_id = request.form['group_id']
+	cursor = conn.cursor()
+	#check if group exists
+	query = 'SELECT * FROM a_group WHERE group_id = %s'
+	cursor.execute(query, group_id)
+	data = cursor.fetchall()
 	if data:
-		return render_template('event_signup.html', logged_in = session['logged_in'], events=data)
+		#check if already in group
+		query = 'SELECT * FROM belongs_to WHERE group_id = %s AND username = %s'
+		cursor.execute(query, (group_id, username))
+		data = cursor.fetchall()
+		if data:
+			query = 'SELECT * FROM a_group'
+			cursor.execute(query)
+			data = cursor.fetchall()
+			query = 'SELECT * FROM a_group NATURAL JOIN belongs_to WHERE username = %s'
+			cursor.execute(query, username)
+			data1 = cursor.fetchall()
+			cursor.close()
+			success = 'Already in Group'
+			return render_template('view_join_group.html', logged_in = session['logged_in'], groups = data, mygroups = data1, success = success)
+		#add
+		else:
+			query = 'INSERT INTO belongs_to VALUES (%s, %s, 0)'
+			cursor.execute(query, (group_id, username))
+			conn.commit()
+			query = 'SELECT * FROM a_group'
+			cursor.execute(query)
+			data = cursor.fetchall()
+			query = 'SELECT * FROM a_group NATURAL JOIN belongs_to WHERE username = %s'
+			cursor.execute(query, username)
+			data1 = cursor.fetchall()
+			cursor.close()
+			success	= 'Added to group!'
+			return render_template('view_join_group.html', logged_in = session['logged_in'], groups = data, mygroups = data1, success = success)
 	else:
-		error = "You have no interests in common with any groups! Try adding other interests or create your own group with events."
-		return render_template('event_signup.html', logged_in = session['logged_in'], error=error)
+		query = 'SELECT * FROM a_group'
+		cursor.execute(query)
+		data = cursor.fetchall()
+		query = 'SELECT * FROM a_group NATURAL JOIN belongs_to WHERE username = %s'
+		cursor.execute(query, username)
+		data1 = cursor.fetchall()
+		cursor.close()
+		error = 'That is an invalid group id'
+		return render_template('view_join_group.html', logged_in = session['logged_in'], groups = data, mygroups = data1, error = error)
+	
 
 @app.route('/create_group')
 def createGroup():
@@ -209,6 +292,8 @@ def makeGroup():
 	username = session['username']
 	group_name = request.form['group_name']
 	description = request.form['description']
+	category = request.form['category']
+	keyword = request.form['keyword']
 	cursor = conn.cursor()
 	query = 'INSERT INTO a_group VALUES (NULL, %s, %s, %s)'
 	cursor.execute(query, (group_name, description, username))
@@ -219,12 +304,58 @@ def makeGroup():
 	query = 'INSERT INTO belongs_to VALUES (%s, %s, 1)'
 	cursor.execute(query, (group_id[max(group_id)], username))
 	conn.commit()
+	query = "SELECT * FROM interest WHERE category = %s AND keyword = %s"
+	cursor.execute(query, (category, keyword))
+	data = cursor.fetchone()
+	if data == None:
+		query = 'INSERT INTO interest VALUES (%s, %s)'
+		cursor.execute(query, (category, keyword))
+		conn.commit()
+	query = 'INSERT INTO about VALUES (%s, %s, %s)'
+	cursor.execute(query, (category, keyword, group_id[max(group_id)]))
+	conn.commit()
 	success = 'Congrats! Group created, your Group ID is ' + str(group_id[max(group_id)])
 	return render_template('create_group.html', logged_in = session['logged_in'], success = success)
 		
+@app.route('/interests')
+def interests():
+	username = session['username']
+	cursor = conn.cursor()
+	query = 'SELECT * FROM interested_in WHERE username = %s'
+	cursor.execute(query, username)
+	data = cursor.fetchall()
+	return render_template('interests.html', logged_in = session['logged_in'], interests = data)
+
+@app.route('/addInterest', methods=['GET', 'POST'])
+def addInterest():
+	username = session['username']
+	keyword = request.form['keyword']
+	category = request.form['category']
+	cursor = conn.cursor()
+	query = "SELECT * FROM interest WHERE category = %s AND keyword = %s"
+	cursor.execute(query, (category, keyword))
+	data = cursor.fetchone()
+	if data == None:
+		query = 'INSERT INTO interest VALUES (%s, %s)'
+		cursor.execute(query, (category, keyword))
+		conn.commit()
+	query = 'INSERT INTO interested_in VALUES (%s, %s, %s)'
+	cursor.execute(query, (username, category, keyword))
+	conn.commit()
+	success = 'Interest added'
+	cursor = conn.cursor()
+	query = 'SELECT * FROM interested_in WHERE username = %s'
+	cursor.execute(query, username)
+	data = cursor.fetchall()
+	return render_template('interests.html', logged_in = session['logged_in'], interests = data, success = success)
+
 @app.route('/create_event')
 def createEvent():
-	return render_template('create_event.html', logged_in = session['logged_in'])
+	cursor = conn.cursor()
+	query = 'SELECT * FROM location'
+	cursor.execute(query)
+	data = cursor.fetchall()
+	return render_template('create_event.html', logged_in = session['logged_in'], locations = data)
 
 @app.route('/makeEvent', methods=['GET', 'POST'])
 def makeEvent():
@@ -237,14 +368,24 @@ def makeEvent():
 	location_name = request.form['location_name']
 	zipcode = request.form['zipcode']
 	cursor = conn.cursor()
-	query = 'SELECT authorized FROM belongs_to WHERE username = %s AND group_id = %s'
+	query = 'SELECT * FROM belongs_to WHERE username = %s AND group_id = %s'
 	cursor.execute(query, (username, group_id))
 	data = cursor.fetchone()
 	#if in group
 	if data:
 		#if authorized
-		if data == 1:
+		if data['authorized'] == 1:
 			cursor = conn.cursor()
+			query = "SELECT * FROM location WHERE location_name = %s AND zipcode = %s"
+			cursor.execute(query, (location_name, zipcode))
+			data = cursor.fetchone()
+			if data == None:
+				cursor = conn.cursor()
+				query = 'SELECT * FROM location'
+				cursor.execute(query)
+				data = cursor.fetchall()
+				error = 'invalid location'
+				return render_template('create_event.html', logged_in = session['logged_in'], locations = data, error = error)
 			query1 = 'INSERT INTO an_event VALUES (NULL, %s, %s, %s, %s, %s, %s)'
 			cursor.execute(query1, (title, description, start_time, end_time, location_name, zipcode))
 			conn.commit()
@@ -252,21 +393,30 @@ def makeEvent():
 			cursor.execute(query2)
 			event_id = cursor.fetchone()
 			query3 = 'INSERT INTO organize VALUES (%s, %s)'
-			cursor.execute(query3, (event_id, group_id))
+			cursor.execute(query3, (event_id['max(event_id)'], group_id))
 			conn.commit()
+			success = 'Congrats! Event created, your Event ID is ' + str(event_id['max(event_id)'])
+			query = 'SELECT * FROM location'
+			cursor.execute(query)
+			data = cursor.fetchall()
 			cursor.close()
-			success = 'Congrats! Event created, your Event ID is ' + event_id
-			return render_template('create_event.html', logged_in = session['logged_in'], success = success)
+			return render_template('create_event.html', logged_in = session['logged_in'], locations = data, success = success)
 		#not auth
 		else:
+			query = 'SELECT * FROM location'
+			cursor.execute(query)
+			data = cursor.fetchall()
 			cursor.close()
 			error = 'You are not authorized to create events, ask for authorization.'
-			return render_template('create_event.html', logged_in = session['logged_in'], error = error)
+			return render_template('create_event.html', logged_in = session['logged_in'], locations = data, error = error)
 	#not in group LOL
 	else:
+		query = 'SELECT * FROM location'
+		cursor.execute(query)
+		data = cursor.fetchall()
 		cursor.close()
 		error = 'You are not not in this group. Join the group and ask for authorization to create events.'
-		return render_template('create_event.html', logged_in = session['logged_in'], error = error)
+		return render_template('create_event.html', logged_in = session['logged_in'], locations = data, error = error)
 	
 @app.route('/event_rating')
 def rateEvent():
@@ -291,7 +441,7 @@ def rate():
 		elapsed = cursor.fetchone()
 		#if passed
 		if elapsed:
-			query3 = 'UPDATE table_name SET rating = %s WHERE username = %s AND event_id = %s'
+			query3 = 'UPDATE sign_up SET rating = %s WHERE username = %s AND event_id = %s'
 			cursor.execute(query3, (rating, username, event_id))
 			conn.commit()
 			cursor.close()
@@ -517,7 +667,22 @@ def authorizeUser():
 		cursor.close()
 		error = 'That group doesnt exist!'
 		return render_template('authorized.html', logged_in = session['logged_in'], authorized = data, error = error)
-	
+
+#SELECT event_id, title, AVG(rating) FROM sign_up NATURAL JOIN an_event WHERE username = '1' AND end_time BETWEEN '2016-12-8 17:55:44' AND '2016-12-11 17:55:44' GROUP BY event_id, title
+@app.route('/view_event_ratings')
+def view_event_ratings():
+	username = session['username']
+	now = datetime.datetime.now()
+	cursor = conn.cursor()
+	endtime = "%s-%s-%s %s:%s:%s" % (str(now.year), str(now.month), str(now.day), str(now.hour), str(now.minute), str(now.second))
+	starttime =  "%s-%s-%s %s:%s:%s" % (str(now.year), str(now.month), str(now.day-3), str(now.hour), str(now.minute), str(now.second))
+	query = 'SELECT event_id, title, AVG(rating) AS rating FROM sign_up NATURAL JOIN an_event WHERE username = %s AND end_time BETWEEN \'' + starttime + '\' AND \'' + endtime + "\' GROUP BY event_id, title"
+	cursor.execute(query, username)
+	data = cursor.fetchall()
+	cursor.close()
+	return render_template('view_event_ratings.html', logged_in = session['logged_in'], events = data)
+
+
 
 @app.route('/remove_account')
 def removeacct():
@@ -529,7 +694,7 @@ def removeacct():
 		conn.commit()
 		cursor.close()
 	except (pymysql.Error, pymysql.Warning) as e:
-		error = "You have too much data in other tables, please clear that to remove account!"
+		error = "You have too much data in other in the database, please clear that to remove account!"
 		return render_template('error.html', logged_in = session['logged_in'], error = error)
 	else:
 		session.pop('username')

@@ -32,6 +32,23 @@
 						<input type="number" name="zipcode" placeholder="Zipcode" required/> </br>
 						<input type="submit" value="Create"/>
 					</form>
+					
+					<h4>Below are all of the locations allowed</h4> </br>
+					<style type="text/css">
+						table, th, td {
+							border: 1px solid black;
+						}
+					</style>
+					<table>
+					<th>Location name</th>
+					<th>Zipcode</th>
+					{% for place in locations %}
+						<tr>
+							<td>{{ place.location_name }}</td>
+							<td>{{ place.zipcode }}</td>
+						</tr>
+					{% endfor %}
+					</table>
 					{% if error %}
 						<p class="error"><strong>Error:</strong> {{ error }}</p>
 					{% endif %}
