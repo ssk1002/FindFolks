@@ -134,7 +134,7 @@ def registerAuth():
 		return render_template('login.html', success = success)
 
 
-@app.route('/home')
+@app.route('/home', methods=['GET', 'POST'])
 def home():
 	username = session['username']
 	logged_in = session['logged_in']
@@ -145,8 +145,22 @@ def home():
 	query = 'SELECT * FROM an_event WHERE start_time BETWEEN \'' + starttime + '\' AND \'' + endtime + "\'"
 	cursor.execute(query)
 	data = cursor.fetchall()
-	cursor.close()
-	return render_template('home.html', username = username, logged_in = logged_in, events = data)
+	cursor.execute(query)
+	data = cursor.fetchall()
+	query = 'SELECT * FROM interest'
+	cursor.execute(query)
+	interests = cursor.fetchall()
+	if request.method == "POST":
+		interest = request.form.get('select_interest')
+		interest = interest.split(', ')
+		category = interest[0]
+		keyword = interest[1]
+		query = 'SELECT * FROM a_group NATURAL JOIN about WHERE category = %s AND keyword = %s'
+		cursor.execute(query, (category, keyword))
+		groups = cursor.fetchall()
+		cursor.close()
+		return render_template('home.html', username = username, logged_in = logged_in, events = data, interests = interests, groups = groups)
+	return render_template('home.html', username = username, logged_in = logged_in, events = data, interests = interests)
 
 @app.route('/view_my_events')
 def view_my_events():
