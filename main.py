@@ -34,8 +34,9 @@ def hello():
 	return redirect(url_for('index'))
 
 #Define route for index
-@app.route('/index')
+@app.route('/index',  methods=['GET', 'POST'])
 def index():
+	groups = None
 	now = datetime.datetime.now()
 	cursor = conn.cursor()
 	starttime = "%s-%s-%s %s:%s:%s" % (str(now.year), str(now.month), str(now.day), str(now.hour), str(now.minute), str(now.second))
@@ -43,8 +44,22 @@ def index():
 	query = 'SELECT * FROM an_event WHERE start_time BETWEEN \'' + starttime + '\' AND \'' + endtime + "\'"
 	cursor.execute(query)
 	data = cursor.fetchall()
-	cursor.close()
-	return render_template('index.html', events=data)
+	query = 'SELECT * FROM interest'
+	cursor.execute(query)
+	interests = cursor.fetchall()
+	if request.method == "POST":
+		interest = request.form.get('select_interest')
+		interest = interest.split(', ')
+		category = interest[0]
+		keyword = interest[1]
+		query = 'SELECT * FROM a_group NATURAL JOIN about WHERE category = %s AND keyword = %s'
+		cursor.execute(query, (category, keyword))
+		groups = cursor.fetchall()
+		cursor.close()
+		return render_template('index.html', events=data, interests = interests, groups = groups)
+	return render_template('index.html', events=data, interests = interests)
+	
+
 
 #Define route for login
 @app.route('/login')
@@ -706,7 +721,16 @@ def removeacct():
 def logout():
 	session.pop('username')
 	session.pop('logged_in')
-	return redirect('/')
+	now = datetime.datetime.now()
+	cursor = conn.cursor()
+	starttime = "%s-%s-%s %s:%s:%s" % (str(now.year), str(now.month), str(now.day), str(now.hour), str(now.minute), str(now.second))
+	endtime =  "%s-%s-%s %s:%s:%s" % (str(now.year), str(now.month), str(now.day+3), str(now.hour), str(now.minute), str(now.second))
+	query = 'SELECT * FROM an_event WHERE start_time BETWEEN \'' + starttime + '\' AND \'' + endtime + "\'"
+	cursor.execute(query)
+	data = cursor.fetchall()
+	cursor.close()
+	success = 'logged out!'
+	return render_template('index.html', events=data, success = success)
 
 
 app.secret_key = 'some key that you will never guess'

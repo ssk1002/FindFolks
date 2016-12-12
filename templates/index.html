@@ -49,6 +49,29 @@
                         </tr>
                     {% endfor %}
                     </table>
+                    <h3>Filter Groups By Interest</h3>
+                    <form name="filter_groups" method="POST">
+                        Interests:
+                        <select name="select_interest">
+                            {% for interest in interests %}
+                                <option value="{{ interest.category }}, {{ interest.keyword }}">
+                                    {{ interest.category }}, {{ interest.keyword }}
+                                </option>
+                            {% endfor %}
+                        </select> </br>
+                        <input type="submit" value="Filter"/>
+                    </form>
+                    </br>
+                    <table>
+                        <th>Group Name</th>
+                        <th>Description</th>
+                        {% for group in groups %}
+                            <tr>
+                                <td>{{ group.group_name }}</td>
+                                <td>{{ group.description }}</td>
+                            </tr>
+                        {% endfor %}
+                    </table>
                     {% if not logged_in %}
                         </br>Create an account today to start and Find Folks!</p>
                     {% endif %}
